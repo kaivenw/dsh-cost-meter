@@ -1,0 +1,5 @@
+# 只装构建期依赖（esbuild/react/react-dom），运行时依赖全部走 DSH 客户端的 seed 表。
+# pnpm 默认拦下依赖的构建脚本；esbuild 的 postinstall 只做一件事：确认平台二进制
+# （@esbuild/darwin-*）在位。不放行则装完跑不起来。
+allowBuilds:
+  esbuild: true

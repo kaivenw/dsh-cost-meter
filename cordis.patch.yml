@@ -1,0 +1,86 @@
+# dsh-cost-meter 的插入条目与全部配置（单价、时段）。
+# 这份文件随包被 profile 载入：profile 的 package.json 把 dsh-cost-meter 列进
+# dsh.profile.bundles，DSH 就会读它的 dsh.bundle.patch 指向的本文件。
+#
+# 改单价 / 改节假日：只改这里，不需要重新构建客户端、也不需要重启（patch 走 HMR 重载）。
+
+- insert:
+    - id: dsh-cost-meter
+      name: dsh-cost-meter
+      config:
+        # 布局排查开关：默认 false。设 true 后客户端会把量到的行宽/核心宽度/缩略级别
+        # POST 回宿主，落盘到 $DSH_HOME/cost-meter-diag.json——只有在「位置不对」时才需要打开。
+        diagnostics: false
+
+        pricing:
+          # 单价单位固定是「货币 / 百万 tokens」，与官方定价页写法一致。
+          # 金额按 token 用量 × 单价折算，故货币要与你账户钱包的货币一致。
+          currency: CNY
+
+          # 查价顺序：`provider/model` → `model` → pricing.defaultModel。
+          # 因此下面用裸 model 名做键，`deepseek-official` 与 `deepseek-account`
+          # 两条路由共用同一份官方价；要按路由区别定价，把键写成 `provider/model` 即可。
+          # cacheWrite 官方价目没有单列（DeepSeek 不上报 cache write），缺省按 cacheMiss 计。
+          #
+          # 来源：https://api-docs.deepseek.com/zh-cn/quick_start/pricing
+          # 空闲时段 = 高峰时段的一半。
+          models:
+            deepseek-flash:
+              label: DeepSeek-V4.1-Flash
+              peak:    { cacheHit: 0.04, cacheMiss: 2,   output: 8 }
+              offPeak: { cacheHit: 0.02, cacheMiss: 1,   output: 4 }
+            deepseek-v4-pro:
+              label: DeepSeek-V4-Pro-0813
+              peak:    { cacheHit: 0.30, cacheMiss: 9,   output: 27 }
+              offPeak: { cacheHit: 0.15, cacheMiss: 4.5, output: 13.5 }
+            # 同一份价目的美元版（若账户钱包是 USD，把 currency 改成 USD 并换成这几档）：
+            #   deepseek-flash   peak {cacheHit: 0.006, cacheMiss: 0.3, output: 1.2}  offPeak {0.003, 0.15, 0.6}
+            #   deepseek-v4-pro  peak {cacheHit: 0.044, cacheMiss: 1.32, output: 3.96} offPeak {0.022, 0.66, 1.98}
+            #
+            # 第三方路由（qwen / moonshot / sensenova …）没有官方价目，**故意不配**：
+            # 未配单价的调用会单独显示成「未计价」，不会被当成 0 元混进总额。
+
+        schedule:
+          # 高峰时段：北京时间周一至周五（不含中国法定节假日）。其余时段（含周末与
+          # 节假日全天）为空闲时段，单价减半。窗口用本地钟点写，判定不读机器时区。
+          peakWindows:
+            - '09:00-12:00'
+            - '14:00-18:00'
+          # 法定节假日日期（北京时间日历日，只列放假日期；调休上班的周末不进表，
+          # 它们本就是周末 → 空闲时段）。
+          # 来源：国务院办公厅《关于2026年部分节假日安排的通知》（国办发明电〔2025〕7号）。
+          # 每年国务院发新通知后更新这一段。
+          holidays:
+            - '2026-01-01'
+            - '2026-01-02'
+            - '2026-01-03'
+            - '2026-02-15'
+            - '2026-02-16'
+            - '2026-02-17'
+            - '2026-02-18'
+            - '2026-02-19'
+            - '2026-02-20'
+            - '2026-02-21'
+            - '2026-02-22'
+            - '2026-02-23'
+            - '2026-04-04'
+            - '2026-04-05'
+            - '2026-04-06'
+            - '2026-05-01'
+            - '2026-05-02'
+            - '2026-05-03'
+            - '2026-05-04'
+            - '2026-05-05'
+            - '2026-06-19'
+            - '2026-06-20'
+            - '2026-06-21'
+            - '2026-09-25'
+            - '2026-09-26'
+            - '2026-09-27'
+            - '2026-10-01'
+            - '2026-10-02'
+            - '2026-10-03'
+            - '2026-10-04'
+            - '2026-10-05'
+            - '2026-10-06'
+            - '2026-10-07'

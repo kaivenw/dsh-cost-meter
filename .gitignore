@@ -1,0 +1,4 @@
+node_modules/
+# 构建/自检产物：client.js 是**要提交**的（运行时直接加载，别人装的时候不用构建）
+test/.tmp/
+layout-check/
